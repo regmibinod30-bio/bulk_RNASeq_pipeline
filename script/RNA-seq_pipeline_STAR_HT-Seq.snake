@@ -1,0 +1,169 @@
+# =====================================
+# RNA-seq_pipeline_STAR_HTSeq.snake
+# =====================================
+# This scirpt is written to implement RNA-seq data processing steps i.e. quality
+# check, mapping and quantification. 
+# =====================================
+# Original instruction by HWS
+# =====================================
+# March 14, 2018 by hws
+# RNA-Seq pipeline
+#   - input: gz fastq files
+#   - steps: trim, mapping, rename bam files, run rseqc
+#   - cp RNA-Seq.snake Snakefile   (so don't have to provide the snakefile name)
+#     cp the config file
+#     cp fq file into 'fq' folder (remove after the pipeline)
+#   - replace mm10 with proper genome if needed 
+#     sed s/mm10/hg19/g RNA-Seq.snake > t ; mv t Snakefile
+#   - module load snakemake/5.1.3; snakemake -np > snake.np # newer version seems having problem to run
+#   - make a swarm file containing the following line: (change -j & --mem as needed)
+#     module load snakemake/5.1.3; snakemake -j 55 --cluster "sbatch  --time=24:00:00 --mem=20g --cpus-per-task={threads}"
+#   - swarm -f snake.sw --time=24:00:00
+#
+# submit jobs to biowulf: (for 24 samples)
+#   snakemake -j 24 -s RNA-Seq.snake -np     --cluster "sbatch  --time=24:00:00 --mem=15g --cpus-per-task={threads}" &
+#   snakemake -j 24 --quiet --cluster "sbatch  --time=24:00:00 --mem=15g --cpus-per-task={threads}" 2>error.out&
+
+# modified by Kan on 2021_01_26
+# --fastqc removed to proceed the pipeline; it does not work
+# module load rseqc/4.0.0 updated from rseqc/2.6.4.
+#  module load trimgalore/0.6.6 updated from  module load trimgalore/0.4.5
+# thread and mem assigned to each rule
+# 
+# =====================================
+# Modified by Binod Nov 15 2021
+# =====================================
+# 1. The pipeline is modified to be implemented by the newest version of Snakemake
+#    (v6.8.2).
+# 2. fastQC added.
+# 3. STAR replaces TOPHAT.
+# 4. HTSeq added.
+# =====================================
+# How to implement this pipeline
+# =====================================
+# 1. RNA-seq data (pair reads) reside in fq directory.
+#  
+# 2. data file should be written in following format:
+#            <sXXXXXXX_1_fq.gz> <sXXXXXX_2_fq.gz>
+#         - file name must start from the letter 's'
+#  
+# 3. The script requires following files:
+#         - hs_config.yaml: This pipleline requires several reference files.
+#           Provide the path to these files through configuration file. Some
+#           files are available in centrally-maintained and updated scientific
+#           database in Biowulf. Some files, for example (GTF) are provided
+#           locally.
+#         - star_htseq_job_run.sh: wrapper script to run the job.
+#         - cluster.yml: this file holds cluster-specific parameters.
+# 
+# 4. The script does not remove the large number of directories and files
+#    created during the process that may not require downstream analysis. 
+#    Remove them.
+#  
+# 5. Dry run the script first and note the number of process required to
+#    complete the analysis. Edit the -j flag of the wrapper script(.sh).
+# 
+# 6. Running the script:
+#                            dry run:
+#                                < module load snakemake/6.8.2 >
+#                                < snakemake -s star_htseq_job_run.sh -np >
+#                            
+#                            batch job:
+#                                < sbatch star_htseq_job_run.sh >
+# 7. Implement generate_expression_matrix.sh to organize file name and
+#    directories from the same directory this script resides.
+#                           
+#                           <./generate_expression_matrix.sh>
+#
+# 8. Implement generate_expression_matrix.R to generate gene expression matrix
+#                           
+#                           < module load R/4.1.0 >
+#                           < Rscript generate_expression_matrix.R >
+
+configfile: "hs_config.yaml"
+SAMPLES, = glob_wildcards("fq/{sample}_1.fq.gz")
+
+rule all:
+  input:
+    (
+    "dup/{sample}.DupRate_plot.pdf".format (sample = s),
+    "fastQC/{sample}_1_fastqc.html".format(sample = s),
+    "bam/{sample}.gene-count.txt".format(sample = s)
+    )
+
+  	for s in SAMPLES
+
+rule raw_reads_fastqc:
+    input:
+      a1="fq/{sample}_1.fq.gz",
+      a2="fq/{sample}_2.fq.gz"
+    output:"fastQC/{sample}_1_fastqc.html"
+    params: 
+        mem="8G",
+        dir="fastQC"
+    threads: 12
+    shell:
+      '''
+      module load fastqc/0.11.9
+      mkdir -p fastQC
+      fastqc -t {threads} -o {params.dir} {input.a1}
+      fastqc -t {threads} -o {params.dir} {input.a2}
+      '''
+
+rule mapping:
+  input: 
+    a1="fq/{sample}_1.fq.gz",
+    a2="fq/{sample}_2.fq.gz"
+  params:
+    genome=config["star"] ["genome"],
+    gtf=config["star"] ["gtf_ensembl"],
+    mem="40G"
+  output: directory("bam/{sample}/")
+  threads: 12
+  shell:
+    '''
+    module load samtools/1.13 STAR/2.7.8a
+    mkdir -p {output}
+    cd {output}
+    STAR --runThreadN {threads} --genomeDir {params.genome} --sjdbGTFfile \
+    {params.gtf} --readFilesIn ../../{input.a1} ../../{input.a2} --readFilesCommand zcat \
+    --outSAMtype BAM SortedByCoordinate --outTmpDir=/lscratch/$SLURM_JOB_ID/STARtmp
+    '''
+
+rule post_mapping:
+  input: "bam/{sample}/"
+  params:
+    mem = "5G"
+  threads: 2
+  output: 
+    "bam/{sample}.bam"
+  shell:
+    '''
+    mv {input}/Aligned.sortedByCoord.out.bam {output}
+    '''
+
+rule dup:
+  input: "bam/{sample}.bam"
+  output:
+    "dup/{sample}.DupRate_plot.pdf"
+  params: 
+    name="dup/{sample}",
+    mem = "5G"
+  threads: 4
+  shell:
+    '''
+    module load rseqc/4.0.0
+    read_duplication.py -i {input} -o {params.name}
+    '''
+
+rule gene_count:
+    input: "bam/{sample}.bam"
+    output: "bam/{sample}.gene-count.txt"
+    params:
+     mem = "10G",
+     gtf = config["star"] ["gtf_ensembl"]
+    shell:
+      '''
+      module load htseq/0.13.5
+      htseq-count -f bam --quiet {input} {params.gtf} > {output}
+      '''

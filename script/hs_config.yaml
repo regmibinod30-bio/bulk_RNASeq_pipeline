@@ -1,0 +1,40 @@
+genome_size:
+  hg19: /data/jiangk/annotation/BDMS/snake/genomes/hg19.genome
+  hg38: /data/jiangk/annotation/BDMS/snake/genomes/hg38.genome
+  #rheMac8: /data/jiangk/annotation/BDMS/snake/genomes/rheMac8.genome
+
+bowtie_index:
+  hg19: /fdb/igenomes/Homo_sapiens/UCSC/hg19/Sequence/BowtieIndex/genome
+  hg38: /fdb/igenomes/Homo_sapiens/UCSC/hg38/Sequence/BowtieIndex/genome
+  #rheMac8: /data/sunh1/analysis/oshea/han-yu/190319_0537_hy_atac_macaca/macaca_genome/BowtieIndex/rheMac8
+
+bowtie2_index:
+  hg19: /fdb/igenomes/Homo_sapiens/UCSC/hg19/Sequence/Bowtie2Index/genome
+  hg38: /fdb/igenomes/Homo_sapiens/UCSC/hg38/Sequence/Bowtie2Index/genome
+
+salmon_index:
+  vM24: /data/jiangk/annotation/BDMS/salmon/gencode.vM24_salmon_1.0.0/
+
+gtf:
+  hg19: /fdb/igenomes/Homo_sapiens/UCSC/hg19/Annotation/Genes/genes.gtf
+  hg38: /fdb/igenomes/Homo_sapiens/UCSC/hg38/Annotation/Genes/genes.gtf
+
+repeat:
+  #hg19: /data/jiangk/annotation/BDMS/snake/genomes/repeats/hg19_rpt.bed
+  #hg38: /data/jiangk/annotation/BDMS/snake/genomes/repeats/hg38_rpt.bed
+
+macs1:
+  hg19: hs
+  hg38: hs
+  rheMac8: hs
+
+black_list:
+  hg38: /data/regmib2/scripts/BDMDS/ref_files/hg38-blacklist.bed
+
+genome_size:
+  hg38: /data/regmib2/scripts/BDMDS/ref_files/hg38.chrom.sizes
+
+star:
+  genome: /fdb/STAR_current/UCSC/hg38/genes-75
+  gtf: /fdb/STAR_current/UCSC/hg38/genes.gtf
+  gtf_ensembl: /data/regmib2/scripts/BDMDS/ref_files/chr#_Homo_sapiens.GRCh38.104.gtf

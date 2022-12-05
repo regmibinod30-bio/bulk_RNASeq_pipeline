@@ -1,0 +1,64 @@
+
+R version 4.1.0 (2021-05-18) -- "Camp Pontanezen"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> # =====================================
+> # generate_expression_matrix.R
+> # =====================================
+> # Binod Regmi Oct 19 2021, NIAMS, BDMDS
+> # This script is written to generate gene expression matrix from HT-seq
+> # outputs. Run the script `generate_expression_matrix.sh` script before
+> # implementing this script. The script requires R-package dplyr. Make sure
+> # Rscript and dplyr are availabe in compute environment.
+> 
+> # Use following command to implement the script:
+> #    < Rscript --vanilla /path/to/this/script > 
+> 
+> #setwd("/gpfs/gsfs12/users/regmib2/snakemake/RNA_seq/test_exp_matrix")
+> # Load library
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> 
+> # Get path to HT-seq output files and put in list
+> all_paths <- list.files(path = "gene_count/", full.names = TRUE)
+> 
+> # Get the contents of the files into a list
+> all_content <- all_paths %>% lapply(read.table, header = TRUE, sep = "\t")
+> 
+> # Convert list of large files into a dataframe
+> df <- as.data.frame(all_content)
+> 
+> # Remove duplicate columns of the dataframe
+> expression_count_matrix <- select(df, -(matches ("gene_id.")))
+> 
+> # Write expression matrix table
+> write.table(expression_count_matrix, file = 'Gene_expression_count_matrix', row.names = FALSE)
+> 
+> proc.time()
+   user  system elapsed 
+  1.691   0.165   2.016 
