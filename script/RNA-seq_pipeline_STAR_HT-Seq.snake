@@ -3,35 +3,13 @@
 # =====================================
 # This scirpt is written to implement RNA-seq data processing steps i.e. quality
 # check, mapping and quantification. 
-# =====================================
-# Original instruction by HWS
-# =====================================
-# March 14, 2018 by hws
-# RNA-Seq pipeline
-#   - input: gz fastq files
-#   - steps: trim, mapping, rename bam files, run rseqc
-#   - cp RNA-Seq.snake Snakefile   (so don't have to provide the snakefile name)
-#     cp the config file
-#     cp fq file into 'fq' folder (remove after the pipeline)
-#   - replace mm10 with proper genome if needed 
-#     sed s/mm10/hg19/g RNA-Seq.snake > t ; mv t Snakefile
-#   - module load snakemake/5.1.3; snakemake -np > snake.np # newer version seems having problem to run
-#   - make a swarm file containing the following line: (change -j & --mem as needed)
-#     module load snakemake/5.1.3; snakemake -j 55 --cluster "sbatch  --time=24:00:00 --mem=20g --cpus-per-task={threads}"
-#   - swarm -f snake.sw --time=24:00:00
 #
 # submit jobs to biowulf: (for 24 samples)
 #   snakemake -j 24 -s RNA-Seq.snake -np     --cluster "sbatch  --time=24:00:00 --mem=15g --cpus-per-task={threads}" &
 #   snakemake -j 24 --quiet --cluster "sbatch  --time=24:00:00 --mem=15g --cpus-per-task={threads}" 2>error.out&
 
-# modified by Kan on 2021_01_26
-# --fastqc removed to proceed the pipeline; it does not work
-# module load rseqc/4.0.0 updated from rseqc/2.6.4.
-#  module load trimgalore/0.6.6 updated from  module load trimgalore/0.4.5
-# thread and mem assigned to each rule
-# 
 # =====================================
-# Modified by Binod Nov 15 2021
+# Written by Binod Nov 15 2021, to fulfill the changing requairements/demands of research investigators in NIAMS/NIH
 # =====================================
 # 1. The pipeline is modified to be implemented by the newest version of Snakemake
 #    (v6.8.2).
