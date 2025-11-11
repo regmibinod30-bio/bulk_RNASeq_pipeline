@@ -1,6 +1,6 @@
-# =====================================
+# *************************************
 # `Report_RNA-seq_pipeline_STAR_HT-SEQ`
-# =====================================
+# *************************************
 
 # Overview
 This report contains the script, data, and output of
